@@ -1,6 +1,8 @@
 <?php
 
-$debug = true;
+$debug = false;
+//$debug = true;
+
 $file_path_of_qids = __DIR__ . '/qids.txt';
 
 $folder_path_of_wikidata = __DIR__ . '/files/wikidata/';
@@ -15,8 +17,10 @@ $step_crawl_wikipedia = false;
 $step_crawl_openai = true;
 //----
 require_once __DIR__ . '/scripts/JsonClass.php';
+require_once __DIR__ . '/scripts/OpenAiClass.php';
 require_once __DIR__ . '/config.php';
 
+$openai_go = new OpenAiClass();
 $json_go = new JsonClass();
 
 $total_crawl_files = 0;
@@ -120,33 +124,40 @@ if($step_crawl_openai){
             }
             //exit();
 
-            if(!file_exists($file_path_of_openai)){
-                if(!is_null($text)
-                ){
-                    if ($debug) {
-                        echo '$text is: ' . print_r($text, true) . PHP_EOL;
-                    }
-                    //exit();
-                    $emb      = embedding(array($text));
-                    /*$document = [
-                        'order' => $qid,
-                        'text'  => $text,
-                        'vec'   => $emb['data'][0]['embedding'],
-                    ];
-                    */
-                    //到這邊，就是完成取得每一個要建檔的 Embeddings 向量資料了
+            $is_crawl_openai = $openai_go->isCallOpenAiApi($file_path_of_openai);
 
-                    $file_content_of_openai = json_encode($emb, JSON_UNESCAPED_UNICODE);
-                    file_put_contents($file_path_of_openai, $file_content_of_openai);
-                    if(file_exists($file_path_of_openai)){
-                        $total_crawl_files++;
-                    }
+            if($is_crawl_openai
+                && !is_null($text)
+            ){
+                if(file_exists($file_path_of_openai)){
+                    rename($file_path_of_openai, $file_path_of_openai . ".bak");
                 }
+
+                $text = mb_substr($text, 0, 6000, "UTF-8");
+                if ($debug) {
+                    echo '$text is: ' . print_r($text, true) . PHP_EOL;
+                }
+                //exit();
+                $emb      = embedding(array($text));
+                /*$document = [
+                    'order' => $qid,
+                    'text'  => $text,
+                    'vec'   => $emb['data'][0]['embedding'],
+                ];
+                */
+                //到這邊，就是完成取得每一個要建檔的 Embeddings 向量資料了
+
+                $file_content_of_openai = json_encode($emb, JSON_UNESCAPED_UNICODE);
+                file_put_contents($file_path_of_openai, $file_content_of_openai);
+                if(file_exists($file_path_of_openai)){
+                    $total_crawl_files++;
+                }
+
             }
 
             if(!is_null($text)
                 && file_exists($file_path_of_openai)
-                && !file_exists($file_path_of_embedding_result)
+                //&& !file_exists($file_path_of_embedding_result)
             ){
                 $file_content = file_get_contents($file_path_of_openai);
                 $emb = json_decode($file_content, true);

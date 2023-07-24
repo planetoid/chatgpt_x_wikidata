@@ -2,11 +2,14 @@
 
 ## Installation
 
-### [typesense/typesense\-php: PHP client for Typesense: https://github\.com/typesense/typesense](https://github.com/typesense/typesense-php)
+1. [typesense/typesense\-php: PHP client for Typesense: https://github\.com/typesense/typesense](https://github.com/typesense/typesense-php)
 
 ```bash
 $ composer require php-http/curl-client typesense/typesense-php
 ```
+
+2. [RahulDey12/gpt\-3\-encoder: 🤖 GPT\-3\-Encoder is a PHP implementation of OpenAI's original python encoder/decoder\.](https://github.com/RahulDey12/gpt-3-encoder)
+
 
 ## 2020~2023年上映的電影
 https://w.wiki/74YJ
