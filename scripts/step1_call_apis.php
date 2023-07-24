@@ -3,22 +3,22 @@
 $debug = false;
 //$debug = true;
 
-$file_path_of_qids = __DIR__ . '/qids.txt';
+$file_path_of_qids = __DIR__ . '/../qids.txt';
 
-$folder_path_of_wikidata = __DIR__ . '/files/wikidata/';
+$folder_path_of_wikidata = __DIR__ . '/../files/wikidata/';
 
-$folder_path_of_enwiki = __DIR__ . '/files/enwiki/';
-$folder_path_of_zhwiki = __DIR__ . '/files/zhwiki/';
+$folder_path_of_enwiki = __DIR__ . '/../files/enwiki/';
+$folder_path_of_zhwiki = __DIR__ . '/../files/zhwiki/';
 
-$folder_path_of_openai = __DIR__ . '/files/openai/';
-$folder_path_of_embedding_result = __DIR__ . '/files/embedding/';
+$folder_path_of_openai = __DIR__ . '/../files/openai/';
+$folder_path_of_embedding_result = __DIR__ . '/../files/embedding/';
 
 $step_crawl_wikipedia = false;
 $step_crawl_openai = true;
 //----
-require_once __DIR__ . '/scripts/JsonClass.php';
-require_once __DIR__ . '/scripts/OpenAiClass.php';
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/JsonClass.php';
+require_once __DIR__ . '/OpenAiClass.php';
+require_once __DIR__ . '/../config.php';
 
 $openai_go = new OpenAiClass();
 $json_go = new JsonClass();
