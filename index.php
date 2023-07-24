@@ -28,7 +28,7 @@ $file_content = file_get_contents($file_path_of_qids);
 $qids = explode(PHP_EOL, $file_content);
 
 //$qids = array();
-//$qids[] = "Q102225";
+//$qids[] = "Q163872";
 
 
 
@@ -113,6 +113,7 @@ if($step_crawl_openai){
                 && array_key_exists("extract", $json_data["query"]["pages"][0])
             ) {
                 $text = $json_data["query"]["pages"][0]["extract"];
+                $text = mb_substr($text, 0, 5500, "UTF-8");
             }
 
             if ($debug) {
@@ -133,7 +134,6 @@ if($step_crawl_openai){
                     rename($file_path_of_openai, $file_path_of_openai . ".bak");
                 }
 
-                $text = mb_substr($text, 0, 6000, "UTF-8");
                 if ($debug) {
                     echo '$text is: ' . print_r($text, true) . PHP_EOL;
                 }
