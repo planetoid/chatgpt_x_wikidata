@@ -14,64 +14,71 @@ $folder_path_of_embedding_result = __DIR__ . '/files/embedding/';
 $step_crawl_wikipedia = false;
 $step_crawl_openai = true;
 //----
-require_once __DIR__ . '/JsonClass.php';
+require_once __DIR__ . '/scripts/JsonClass.php';
 require_once __DIR__ . '/config.php';
 
 $json_go = new JsonClass();
 
 $total_crawl_files = 0;
 $file_content = file_get_contents($file_path_of_qids);
-$qids_data = explode(PHP_EOL, $file_content);
+$qids = explode(PHP_EOL, $file_content);
 
-//$qids_data = array();
-//$qids_data[] = "Q18407";
+//$qids = array();
+//$qids[] = "Q102225";
 
 
 
-echo 'count of $qids_data: ' . count($qids_data) . PHP_EOL;
+echo 'count of $qids: ' . count($qids) . PHP_EOL;
 
 if($step_crawl_wikipedia){
-    foreach ($qids_data AS $qid){
-
-        $file_name_of_wikidata = "{$qid}.json";
-        $file_path_of_wikidata = $folder_path_of_wikidata . $file_name_of_wikidata;
-
-        $json_content = file_get_contents($file_path_of_wikidata);
-        $json_data = json_decode($json_content, true);
-        if ($debug) {
-            //echo '$json_data is: ' . print_r($json_data, true) . PHP_EOL;
-        }
-
-        $en_title = null;
-        if(array_key_exists("entities", $json_data)
-            && array_key_exists($qid, $json_data["entities"])
-            && array_key_exists("sitelinks", $json_data["entities"][$qid])
-            && array_key_exists("enwiki", $json_data["entities"][$qid]["sitelinks"])
-            && array_key_exists("title", $json_data["entities"][$qid]["sitelinks"]["enwiki"])
-        ){
-            $en_title = $json_data["entities"][$qid]["sitelinks"]["enwiki"]["title"];
-        }
-
-        $zh_title = null;
-        if(array_key_exists("entities", $json_data)
-            && array_key_exists($qid, $json_data["entities"])
-            && array_key_exists("sitelinks", $json_data["entities"][$qid])
-            && array_key_exists("zhwiki", $json_data["entities"][$qid]["sitelinks"])
-            && array_key_exists("title", $json_data["entities"][$qid]["sitelinks"]["zhwiki"])
-        ){
-            $zh_title = $json_data["entities"][$qid]["sitelinks"]["zhwiki"]["title"];
-        }
+    foreach ($qids AS $qid){
 
         if ($debug) {
-            echo '$en_title is: ' . print_r($en_title, true) . PHP_EOL;
-            echo '$zh_title is: ' . print_r($zh_title, true) . PHP_EOL;
+            echo '$qid is: ' . print_r($qid, true) . PHP_EOL;
         }
 
-        if(!is_null($zh_title)) {
-            $total_crawl_files += getZhWikiData($qid, $zh_title);
-        }elseif(!is_null($en_title)) {
-            $total_crawl_files += getEnWikiData($qid, $en_title);
+        if(trim($qid) !== ""){
+            $file_name_of_wikidata = "{$qid}.json";
+            $file_path_of_wikidata = $folder_path_of_wikidata . $file_name_of_wikidata;
+
+            $json_content = file_get_contents($file_path_of_wikidata);
+            $json_data = json_decode($json_content, true);
+            if ($debug) {
+                //echo '$json_data is: ' . print_r($json_data, true) . PHP_EOL;
+            }
+
+            $en_title = null;
+            if(array_key_exists("entities", $json_data)
+                && array_key_exists($qid, $json_data["entities"])
+                && array_key_exists("sitelinks", $json_data["entities"][$qid])
+                && array_key_exists("enwiki", $json_data["entities"][$qid]["sitelinks"])
+                && array_key_exists("title", $json_data["entities"][$qid]["sitelinks"]["enwiki"])
+            ){
+                $en_title = $json_data["entities"][$qid]["sitelinks"]["enwiki"]["title"];
+            }
+
+            $zh_title = null;
+            if(array_key_exists("entities", $json_data)
+                && array_key_exists($qid, $json_data["entities"])
+                && array_key_exists("sitelinks", $json_data["entities"][$qid])
+                && array_key_exists("zhwiki", $json_data["entities"][$qid]["sitelinks"])
+                && array_key_exists("title", $json_data["entities"][$qid]["sitelinks"]["zhwiki"])
+            ){
+                $zh_title = $json_data["entities"][$qid]["sitelinks"]["zhwiki"]["title"];
+            }
+
+            if ($debug) {
+                echo '$en_title is: ' . print_r($en_title, true) . PHP_EOL;
+                echo '$zh_title is: ' . print_r($zh_title, true) . PHP_EOL;
+            }
+
+            if(!is_null($zh_title)) {
+                $total_crawl_files += getZhWikiData($qid, $zh_title);
+            }elseif(!is_null($en_title)) {
+                $total_crawl_files += getEnWikiData($qid, $en_title);
+            }
         }
+
     }
 
     echo '$total_crawl_files: ' . $total_crawl_files . PHP_EOL;
@@ -79,7 +86,11 @@ if($step_crawl_wikipedia){
 
 if($step_crawl_openai){
     $total_crawl_files = 0;
-    foreach ($qids_data AS $qid){
+    foreach ($qids AS $qid){
+
+        if ($debug) {
+            echo '$qid is: ' . print_r($qid, true) . PHP_EOL;
+        }
 
         $file_name = "{$qid}.json";
         $file_path_of_zhwiki = $folder_path_of_zhwiki . $file_name;
@@ -101,6 +112,10 @@ if($step_crawl_openai){
             }
 
             if ($debug) {
+                //echo '$text is: ' . print_r($text, true) . PHP_EOL;
+            }
+
+            if ($debug) {
                 //echo '$json_data is: ' . print_r($json_data, true) . PHP_EOL;
             }
             //exit();
@@ -113,14 +128,15 @@ if($step_crawl_openai){
                     }
                     //exit();
                     $emb      = embedding(array($text));
-                    $document = [
+                    /*$document = [
                         'order' => $qid,
                         'text'  => $text,
                         'vec'   => $emb['data'][0]['embedding'],
                     ];
+                    */
                     //到這邊，就是完成取得每一個要建檔的 Embeddings 向量資料了
 
-                    $file_content_of_openai = json_encode($document);
+                    $file_content_of_openai = json_encode($emb, JSON_UNESCAPED_UNICODE);
                     file_put_contents($file_path_of_openai, $file_content_of_openai);
                     if(file_exists($file_path_of_openai)){
                         $total_crawl_files++;
@@ -128,18 +144,18 @@ if($step_crawl_openai){
                 }
             }
 
-            if(!file_exists($file_path_of_embedding_result)){
-
+            if(!is_null($text)
+                && file_exists($file_path_of_openai)
+                && !file_exists($file_path_of_embedding_result)
+            ){
+                $file_content = file_get_contents($file_path_of_openai);
+                $emb = json_decode($file_content, true);
 
                 if ($debug) {
-                    echo '$text is: ' . print_r($text, true) . PHP_EOL;
+                    //echo '$text is: ' . print_r($text, true) . PHP_EOL;
                 }
                 //exit();
-                $emb      = embedding(array($text));
-                if(!file_exists($file_path_of_openai)){
-                    $file_content_of_openai = json_encode($emb);
-                    file_put_contents($file_path_of_openai, $file_content_of_openai);
-                }
+                //$emb      = embedding(array($text));
 
                 $document = [
                     'order' => $qid,
@@ -149,8 +165,8 @@ if($step_crawl_openai){
                 //到這邊，就是完成取得每一個要建檔的 Embeddings 向量資料了
 
                 $file_content_of_embedding = json_encode($document);
-                file_put_contents($file_content_of_embedding, $file_content_of_openai);
-                if(file_exists($file_content_of_embedding)){
+                file_put_contents($file_path_of_embedding_result, $file_content_of_embedding);
+                if(file_exists($file_path_of_embedding_result)){
                     $total_crawl_files++;
                 }
 
@@ -235,7 +251,13 @@ function crawl($url = "", $file_path = ""){
 
 // [OpenAI] 使用 PHP 搭配 Embeddings 開發個人化 AI 問答機器人 – YourGPT – 一介資男 https://www.mxp.tw/9785/
 function embedding($input) {
+    global $debug;
     $api_key = getenv("OPENAI_API_TOKEN");
+
+    if ($debug) {
+        //echo '$api_key is: ' . print_r($api_key, true) . PHP_EOL;
+    }
+    //exit();
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, 'https://api.openai.com/v1/embeddings');
@@ -245,7 +267,7 @@ function embedding($input) {
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         //'Authorization: Bearer sk-你的OPENAI_API_KEY',
-        "Authorization: {$api_key}",
+        "Authorization: Bearer {$api_key}",
         'Content-Type: application/json; charset=utf-8',
     ]);
 

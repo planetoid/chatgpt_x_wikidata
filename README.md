@@ -1,5 +1,13 @@
 # coscup2023
 
+## Installation
+
+### [typesense/typesense\-php: PHP client for Typesense: https://github\.com/typesense/typesense](https://github.com/typesense/typesense-php)
+
+```bash
+$ composer require php-http/curl-client typesense/typesense-php
+```
+
 ## 2020~2023年上映的電影
 https://w.wiki/74YJ
 
@@ -112,3 +120,7 @@ LIMIT 100
 
 # 已达到查询超时限制
 ```
+
+## References
+
+* [Collections \| Typesense](https://typesense.org/docs/0.23.0/api/collections.html#create-a-collection) 定義資料型態
