@@ -14,10 +14,15 @@ $folder_path_of_openai = __DIR__ . '/../files/openai/';
 $folder_path_of_embedding_result = __DIR__ . '/../files/embedding/';
 
 $step_crawl_wikipedia = false;
-$step_crawl_openai = true;
+$step_crawl_openai = false;
+$step_generate_embedding_files = false;
+//$step_generate_embedding_files = true;
+$step_import_to_typesense = true;
+
+$typesense_api_key = getenv("TYPESENSE_API_KEY");
+$typesense_collection_name = "test-collection";
 //----
-require_once __DIR__ . '/JsonClass.php';
-require_once __DIR__ . '/OpenAiClass.php';
+require_once __DIR__ . '/../load.php';
 require_once __DIR__ . '/../config.php';
 
 $openai_go = new OpenAiClass();
@@ -27,9 +32,11 @@ $total_crawl_files = 0;
 $file_content = file_get_contents($file_path_of_qids);
 $qids = explode(PHP_EOL, $file_content);
 
-//$qids = array();
-//$qids[] = "Q163872";
-
+/*
+$qids = array();
+$qids[] = "Q163872";
+$qids[] = "Q102225";
+*/
 
 
 echo 'count of $qids: ' . count($qids) . PHP_EOL;
@@ -88,10 +95,12 @@ if($step_crawl_wikipedia){
     echo '$total_crawl_files: ' . $total_crawl_files . PHP_EOL;
 }
 
-if($step_crawl_openai){
-    $total_crawl_files = 0;
+if($step_crawl_openai | $step_generate_embedding_files){
+    $total_crawl_files_of_openai = 0;
+    $total_generated_files_of_embedding = 0;
     foreach ($qids AS $qid){
 
+        $id = str_replace(array("Q"), "" ,$qid);
         if ($debug) {
             echo '$qid is: ' . print_r($qid, true) . PHP_EOL;
         }
@@ -137,28 +146,19 @@ if($step_crawl_openai){
                 if ($debug) {
                     echo '$text is: ' . print_r($text, true) . PHP_EOL;
                 }
-                //exit();
-                $emb      = embedding(array($text));
-                /*$document = [
-                    'order' => $qid,
-                    'text'  => $text,
-                    'vec'   => $emb['data'][0]['embedding'],
-                ];
-                */
-                //到這邊，就是完成取得每一個要建檔的 Embeddings 向量資料了
-
-                $file_content_of_openai = json_encode($emb, JSON_UNESCAPED_UNICODE);
-                file_put_contents($file_path_of_openai, $file_content_of_openai);
+                $emb      = $openai_go->callEmbeddingAPI(array($text), $file_path_of_openai);
                 if(file_exists($file_path_of_openai)){
-                    $total_crawl_files++;
+                    $total_crawl_files_of_openai++;
                 }
 
             }
 
-            if(!is_null($text)
+            if($step_generate_embedding_files
+                && !is_null($text)
                 && file_exists($file_path_of_openai)
                 //&& !file_exists($file_path_of_embedding_result)
             ){
+
                 $file_content = file_get_contents($file_path_of_openai);
                 $emb = json_decode($file_content, true);
 
@@ -169,25 +169,40 @@ if($step_crawl_openai){
                 //$emb      = embedding(array($text));
 
                 $document = [
-                    'order' => $qid,
+                    'id' => $id,
+                    'qid' => $qid,
                     'text'  => $text,
-                    'vec'   => $emb['data'][0]['embedding'],
+                    'vect'   => $emb['data'][0]['embedding'],
                 ];
                 //到這邊，就是完成取得每一個要建檔的 Embeddings 向量資料了
 
                 $file_content_of_embedding = json_encode($document);
                 file_put_contents($file_path_of_embedding_result, $file_content_of_embedding);
                 if(file_exists($file_path_of_embedding_result)){
-                    $total_crawl_files++;
+                    $total_generated_files_of_embedding++;
                 }
-
             }
+
 
         }
 
 
     }
-    echo '$total_crawl_files: ' . $total_crawl_files . PHP_EOL;
+    echo '$total_crawl_files_of_openai: ' . $total_crawl_files_of_openai . PHP_EOL;
+    echo '$total_generated_files_of_embedding: ' . $total_generated_files_of_embedding . PHP_EOL;
+}
+
+if($step_import_to_typesense){
+    $total_affected_count = 0;
+
+    foreach ($qids AS $qid){
+        $file_name = "{$qid}.json";
+        $file_path_of_embedding_result = $folder_path_of_embedding_result . $file_name;
+        if(file_exists($file_path_of_embedding_result)){
+            $total_affected_count += importToTypesense($file_path_of_embedding_result);
+        }
+    }
+    echo '$total_affected_count: ' . $total_affected_count . PHP_EOL;
 }
 
 
@@ -260,40 +275,40 @@ function crawl($url = "", $file_path = ""){
 }
 
 
-// [OpenAI] 使用 PHP 搭配 Embeddings 開發個人化 AI 問答機器人 – YourGPT – 一介資男 https://www.mxp.tw/9785/
-function embedding($input) {
+
+
+/**
+ * @param $file_path
+ * @return int
+ */
+function importToTypesense($file_path = ""){
     global $debug;
-    $api_key = getenv("OPENAI_API_TOKEN");
+    global $typesense_api_key;
+    global $typesense_collection_name;
+
+    if(!file_exists($file_path)){
+        return 0;
+    }
+
+    $command = "curl -H \"X-TYPESENSE-API-KEY: {$typesense_api_key}\" -X POST --data-binary @{$file_path} \"http://localhost:8108/collections/{$typesense_collection_name}/documents/import?return_id=true\"";
+    //$command = "curl -H \"X-TYPESENSE-API-KEY: {$typesense_api_key}\" -X POST --data-binary @{$file_path} \"http://localhost:8108/collections/{$typesense_collection_name}/documents/upsert?return_id=true\"";
+    // > met { "message": "Not Found"}
+
+    //$command = escapeshellcmd($command);
+
+    exec($command, $output);
 
     if ($debug) {
-        //echo '$api_key is: ' . print_r($api_key, true) . PHP_EOL;
+        echo '$output is: ' . gettype($output) . ' ' . print_r($output, true) . PHP_EOL;
     }
-    //exit();
 
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, 'https://api.openai.com/v1/embeddings');
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        //'Authorization: Bearer sk-你的OPENAI_API_KEY',
-        "Authorization: Bearer {$api_key}",
-        'Content-Type: application/json; charset=utf-8',
-    ]);
-
-    $json_array = [
-        'model' => 'text-embedding-ada-002',
-        'input' => $input,
-    ];
-    $body = json_encode($json_array);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
-    $response = curl_exec($ch);
-
-    if (!$response) {
-        die('Error: "' . curl_error($ch) . '" - Code: ' . curl_errno($ch));
+    if(is_array(json_decode($output, true))){
+        $json_data = json_decode($output, true);
+        if(array_key_exists("success", $json_data)
+            && $json_data["success"] === true
+        ){
+            return 1;
+        }
     }
-    curl_close($ch);
-    return json_decode($response, true);
+    return 0;
 }

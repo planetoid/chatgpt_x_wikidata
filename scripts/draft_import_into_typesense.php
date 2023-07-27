@@ -6,6 +6,8 @@ $folder_path_of_embedding_result = __DIR__ . '/../files/embedding/';
 $folder_path_of_typesense = __DIR__ . '/../files/typesense_jsonl/';
 
 $step_convert_json_to_jsonl = false;
+//$step_convert_json_to_jsonl = true;
+
 //$step_import_to_typesense = false;
 $step_import_to_typesense = true;
 
@@ -13,7 +15,6 @@ $typesense_api_key = getenv("TYPESENSE_API_KEY");
 $typesense_collection_name = "test-collection";
 
 use Typesense\Client;
-
 
 //----
 require_once __DIR__ . '/../config.php';
@@ -26,9 +27,10 @@ $file_content = file_get_contents($file_path_of_qids);
 $qids = explode(PHP_EOL, $file_content);
 echo 'count of $qids: ' . count($qids) . PHP_EOL;
 
-//$qids = array();
+$qids = array();
 //$qids[] = "Q18407";
 //$qids[] = "Q102225";
+$qids[] = "Q163872";
 
 
 if($step_convert_json_to_jsonl){
@@ -82,6 +84,11 @@ if($step_import_to_typesense){
     );
 
     $file_list = array_diff(scandir($folder_path_of_typesense), array('.', '..', '.DS_Store'));
+
+    $file_list = array();
+    //$file_list[] = "Q99964772.jsonl";
+    $file_list[] = "Q163872.jsonl";
+
     foreach ($file_list AS $file_name){
         $file_path = $folder_path_of_typesense . $file_name;
         if ($debug) {
@@ -89,7 +96,35 @@ if($step_import_to_typesense){
         }
 
         $documentsInJsonl = file_get_contents($file_path);
-        $client->collections[$typesense_collection_name]->documents->import($documentsInJsonl, ['action' => 'create']);
+
+        $json_data = json_decode($documentsInJsonl, true);
+
+        $text = $json_data[0]['text'];
+        $text = str_replace(array("\r\n", "\n", "\r"), '', $text);
+        $text = str_replace(array('"'), "'", $text);
+        $json_data[0]["text"] = $text;
+        $json_data = $json_data[0];
+
+        if ($debug) {
+            echo '$json_data is: ' . print_r($json_data, true) . PHP_EOL;
+        }
+
+        //unset($json_data[0]['vec']);
+
+        //$documentsInJsonl = json_encode($json_data, JSON_UNESCAPED_UNICODE);
+        $documentsInJsonl = json_encode($json_data);
+        echo $documentsInJsonl . PHP_EOL;
+
+        //$import_result = $client->collections[$typesense_collection_name]->documents->import($documentsInJsonl, ['action' => 'create']);
+        //$import_result = $client->collections[$typesense_collection_name]->documents->import($documentsInJsonl, ['action' => 'upsert']);
+        //$import_result = $client->collections[$typesense_collection_name]->documents->create($json_data);
+        $import_result = $client->collections[$typesense_collection_name]->documents->upsert($json_data);
+        //$import_result = $client->collections[$typesense_collection_name]->documents->create($documentsInJsonl);
+        //var_dump($import_result);
+
+        if ($debug) {
+            echo '$import_result is: ' . print_r($import_result, true) . PHP_EOL;
+        }
     }
 }
 
