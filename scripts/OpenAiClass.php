@@ -4,6 +4,7 @@ class OpenAiClass
 {
     public $debug = false;
 
+
     // Modified the source code from mxp.tw
     // [OpenAI] 使用 PHP 搭配 Embeddings 開發個人化 AI 問答機器人 – YourGPT – 一介資男 https://www.mxp.tw/9785/
 
@@ -57,10 +58,45 @@ class OpenAiClass
     }
 
     /**
+     * @param $text
+     * @param $file_path
+     * @return int
+     */
+    public function callEmbeddingAPIGivenText($text = "", $file_path = null) {
+        $debug = $this->debug;
+
+        if(trim($text) === ""){
+            return 0;
+        }
+
+        $total_crawl_files_of_openai = 0;
+
+        $is_crawl_openai = $this->isCallOpenAiApi($file_path);
+
+        if($is_crawl_openai){
+            if(file_exists($file_path)){
+                rename($file_path, $file_path . ".bak");
+            }
+
+            if ($debug) {
+                echo '$text is: ' . print_r($text, true) . PHP_EOL;
+            }
+            $embedding_data = $this->callEmbeddingAPI(array($text), $file_path);
+            if(file_exists($file_path)){
+                $total_crawl_files_of_openai++;
+            }
+
+        }
+        return $total_crawl_files_of_openai;
+    }
+
+    /**
      * @param $file_path
      * @return bool
      */
     public function isCallOpenAiApi($file_path = ""){
+
+        $json_go = new JsonClass();
 
         if(!file_exists($file_path)){
             return true;
@@ -71,9 +107,18 @@ class OpenAiClass
             return true;
         }
 
+        $is_json_error = $json_go->isFileMetError($file_path);
+        if($is_json_error){
+            return true;
+        }
+
         return false;
     }
 
+    /**
+     * @param $file_path
+     * @return bool
+     */
     public function isFileMetContextLengthError($file_path = ""){
 
         if(!file_exists($file_path)){
@@ -113,5 +158,39 @@ class OpenAiClass
 
         return false;
 
+    }
+
+    /**
+     * @param $qid
+     * @param $text
+     * @param $api_json_content
+     * @param $file_path
+     * @return int
+     */
+    public function transformApiDataToFriendlyFormat($qid = "", $text = "", $api_json_content = "", $file_path = null){
+        $debug = $this->debug;
+        $id = str_replace(array("Q"), "" ,$qid);
+
+        $total_generated_files_of_embedding = 0;
+        $embedding_data = json_decode($api_json_content, true);
+
+        if ($debug) {
+            echo '$text is: ' . print_r($text, true) . PHP_EOL;
+            echo '$embedding_data is: ' . print_r($embedding_data, true) . PHP_EOL;
+        }
+
+        $document = array(
+            'id' => $id,
+            'qid' => $qid,
+            'text'  => $text,
+            'vect'   => $embedding_data['data'][0]['embedding'],
+        );
+
+        $file_content_of_embedding = json_encode($document);
+        file_put_contents($file_path, $file_content_of_embedding);
+        if(file_exists($file_path)){
+            $total_generated_files_of_embedding++;
+        }
+        return $total_generated_files_of_embedding;
     }
 }

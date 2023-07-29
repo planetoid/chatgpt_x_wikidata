@@ -13,6 +13,7 @@ $folder_path_of_zhwiki = __DIR__ . '/../files/zhwiki/';
 $folder_path_of_openai = __DIR__ . '/../files/openai/';
 $folder_path_of_embedding_result = __DIR__ . '/../files/embedding/';
 
+$step_crawl_wikidata = false;
 $step_crawl_wikipedia = false;
 $step_crawl_openai = false;
 $step_generate_embedding_files = false;
@@ -22,10 +23,11 @@ $step_generate_embedding_files = false;
 require_once __DIR__ . '/../load.php';
 require_once __DIR__ . '/../config.php';
 
+$wikidata_go = new WikiDataClass();
 $openai_go = new OpenAiClass();
 $json_go = new JsonClass();
 $wikipedia_go = new WikipediaClass();
-$wikidata_go = new WikiDataClass();
+
 
 $total_crawl_files = 0;
 $file_content = file_get_contents($file_path_of_qids);
@@ -40,7 +42,18 @@ $qids[] = "Q102225";
 
 echo 'count of $qids: ' . count($qids) . PHP_EOL;
 
+if($step_crawl_wikidata){
+    echo '# $step_crawl_wikidata' . PHP_EOL;
+    foreach ($qids AS $qid){
+        $file_name = "{$qid}.json";
+        $file_path = $folder_path_of_wikidata . $file_name;
+        $total_crawl_files += $wikidata_go->crawlGivenQid($qid, $file_path);
+    }
+    echo '$total_crawl_files: ' . $total_crawl_files . PHP_EOL;
+}
+
 if($step_crawl_wikipedia){
+    echo '# $step_crawl_wikipedia' . PHP_EOL;
     foreach ($qids AS $qid){
 
         if ($debug) {
@@ -67,6 +80,7 @@ if($step_crawl_wikipedia){
 }
 
 if($step_crawl_openai | $step_generate_embedding_files){
+    echo '# $step_crawl_openai or $step_generate_embedding_files' . PHP_EOL;
     $total_crawl_files_of_openai = 0;
     $total_generated_files_of_embedding = 0;
     foreach ($qids AS $qid){
@@ -86,62 +100,16 @@ if($step_crawl_openai | $step_generate_embedding_files){
             $text = $wikipedia_go->getExtractFromJsonContent($json_content);
             $text = mb_substr($text, 0, 5500, "UTF-8");
 
-            if ($debug) {
-                //echo '$text is: ' . print_r($text, true) . PHP_EOL;
-            }
-
-            if ($debug) {
-                //echo '$json_data is: ' . print_r($json_data, true) . PHP_EOL;
-            }
-            //exit();
-
-            $is_crawl_openai = $openai_go->isCallOpenAiApi($file_path_of_openai);
-
-            if($is_crawl_openai
-                && !is_null($text)
-            ){
-                if(file_exists($file_path_of_openai)){
-                    rename($file_path_of_openai, $file_path_of_openai . ".bak");
-                }
-
-                if ($debug) {
-                    echo '$text is: ' . print_r($text, true) . PHP_EOL;
-                }
-                $emb      = $openai_go->callEmbeddingAPI(array($text), $file_path_of_openai);
-                if(file_exists($file_path_of_openai)){
-                    $total_crawl_files_of_openai++;
-                }
-
+            if($step_crawl_openai){
+                $total_crawl_files_of_openai = $openai_go->callEmbeddingAPIGivenText($text, $file_path_of_openai);
             }
 
             if($step_generate_embedding_files
-                && !is_null($text)
                 && file_exists($file_path_of_openai)
-                //&& !file_exists($file_path_of_embedding_result)
             ){
-
                 $file_content = file_get_contents($file_path_of_openai);
-                $emb = json_decode($file_content, true);
-
-                if ($debug) {
-                    //echo '$text is: ' . print_r($text, true) . PHP_EOL;
-                }
-                //exit();
-                //$emb      = embedding(array($text));
-
-                $document = [
-                    'id' => $id,
-                    'qid' => $qid,
-                    'text'  => $text,
-                    'vect'   => $emb['data'][0]['embedding'],
-                ];
-                //到這邊，就是完成取得每一個要建檔的 Embeddings 向量資料了
-
-                $file_content_of_embedding = json_encode($document);
-                file_put_contents($file_path_of_embedding_result, $file_content_of_embedding);
-                if(file_exists($file_path_of_embedding_result)){
-                    $total_generated_files_of_embedding++;
-                }
+                $openai_api_result = json_decode($file_content, true);
+                $total_generated_files_of_embedding = $openai_go->transformApiDataToFriendlyFormat($qid, $text, $openai_api_result, $file_path_of_embedding_result);
             }
 
 

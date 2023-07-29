@@ -10,6 +10,18 @@ class WikiDataClass
 
     /**
      * @param $qid
+     * @param $file_path
+     * @return int
+     */
+    public function crawlGivenQid($qid = "", $file_path = null){
+        $wikipedia_go = new WikipediaClass();
+
+        $url = "https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels|sitelinks&ids={$qid}&languages=zh";
+        return $wikipedia_go->crawl($url, $file_path);
+    }
+
+    /**
+     * @param $qid
      * @return array|null
      */
     public function getWikipediaTitleData($qid = ""){
