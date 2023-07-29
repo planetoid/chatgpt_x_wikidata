@@ -21,7 +21,6 @@ $question = "在不遠的未來，李凱，一位才華洋溢的程式設計師�
 //$question = "故事主角為一位名叫阿爾弗雷德的年輕男子，他出身於一個貴族家庭，繼承了家族的領地和權力。這個領地包含了一個名為「星石」的珍貴資源，這是整個銀河系中最寶貴的資產，也是保持銀河穩定的關鍵元素。阿爾弗雷德在父親過世後，必須肩負起保護「星石」以及他的家族領地的重責大任。透過此片，我們可以看到他如何將自己的命運與整個銀河系的安危緊密繫結，並踏上了保護這個至關重要資源的道路。";
 $folder_path_of_openai_question = __DIR__ . '/../files/openai_of_question/';
 $folder_path_of_embedding = __DIR__ . '/../files/embedding/';
-$folder_path_of_openai_question = __DIR__ . '/../files/openai_of_question/';
 
 
 
@@ -32,6 +31,17 @@ require_once __DIR__ . '/../config.php';
 $openai_go = new OpenAiClass();
 $embedding_go = new EmbeddingClass();
 $folder_path_of_search_result = $embedding_go->folder_path_of_search_result;
+
+$folder_path_list = array();
+$folder_path_list[] = $folder_path_of_openai_question;
+$folder_path_list[] = $folder_path_of_embedding;
+$folder_path_list[] = $folder_path_of_search_result;
+
+foreach ($folder_path_list AS $folder_path){
+    if (!file_exists($folder_path)) {
+        mkdir($folder_path, 0777, true);
+    }
+}
 
 $question = trim($question);
 $file_name = md5($question) . ".json";

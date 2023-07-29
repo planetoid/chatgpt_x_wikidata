@@ -29,6 +29,19 @@ $json_go = new JsonClass();
 $wikipedia_go = new WikipediaClass();
 
 
+$folder_path_list = array();
+$folder_path_list[] = $folder_path_of_wikidata;
+$folder_path_list[] = $folder_path_of_enwiki;
+$folder_path_list[] = $folder_path_of_zhwiki;
+$folder_path_list[] = $folder_path_of_openai;
+$folder_path_list[] = $folder_path_of_embedding_result;
+
+foreach ($folder_path_list AS $folder_path){
+    if (!file_exists($folder_path)) {
+        mkdir($folder_path, 0777, true);
+    }
+}
+
 $total_crawl_files = 0;
 $file_content = file_get_contents($file_path_of_qids);
 $qids = explode(PHP_EOL, $file_content);

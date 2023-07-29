@@ -6,7 +6,9 @@
 $ composer update
 ```
 
-## 2020~2023年上映的電影
+## Usage
+
+1. 查詢 2020~2023年上映的電影，匯出至 `qids.txt`
 https://w.wiki/74YJ
 
 ```sparql
@@ -22,99 +24,17 @@ SELECT DISTINCT ?item ?itemLabel ?pubdate WHERE {
 # 12873 rows
 ```
 
-### other sqarql
+2. 設定 `config.php` 中的 `OPENAI_API_TOKEN`。如何取得 OpenAI API Token (Key)，請看 [Where do I find my Secret API Key? \| OpenAI Help Center](https://help.openai.com/en/articles/4936850-where-do-i-find-my-secret-api-key) 網頁說明。
 
-```sparql
-SELECT DISTINCT ?label ?boxLabel ?genreLabel ?dateLabel ?vactorLabel ?awardsLabel ?directorLabel ?musicLabel ?companyLabel ?actorLabel ?runtime {
-        ?movie wdt:P31/wdt:P279* wd:Q11424 .
-        ?movie rdfs:label ?label .
-       ?movie wdt:P577 ?pubdate.
-#       FILTER((?pubdate >= "2022-01-01T00:00:00Z"^^xsd:dateTime))
-#    FILTER((?pubdate >= "2022-01-01T00:00:00Z"^^xsd:dateTime) && (?pubdate <= "2022-12-31T00:00:00Z"^^xsd:dateTime))
-FILTER((?pubdate >= "2023-01-01T00:00:00Z"^^xsd:dateTime))
-       ?movie wdt:P136 ?genre ;
-                wdt:P577 ?date ;
-                wdt:P57  ?director ;
-                wdt:P86  ?music ;
-                wdt:P2142 ?box;
-                wdt:P2047  ?runtime;
-                wdt:P272  ?company ;
+3. `step1_call_apis.php` 設定要啟用的步驟
 
-        OPTIONAL{
-            ?movie wdt:P161 ?actor .
-        }
-        OPTIONAL{
-            ?movie wdt:P725 ?vactor .
-        }
-        OPTIONAL{
-            ?movie wdt:P166 ?awards .
-        }
-        # SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-        SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-} LIMIT 100
+* $step_crawl_wikidata 依據  `qids.txt` 抓取 WikiData 條目資料
+* $step_crawl_wikipedia 依據 WikiData 條目抓取 Wikipedia 條目資料對應的電影描述
+* $step_crawl_openai 依據 Wikipedia 條目的電影描述 (篩選有中文描述的條目)，呼叫 OpenAi Embedding API
+* $step_generate_embedding_files 將 OpenAi Embedding API 轉成比較容易閱讀的檔案格式
 
-# 包含重複結果
-```
+4. `step2_qa.php` 輸入要詢問的問題，將會在產生結果網頁檔案 (位於 `files/search_result/`)
 
-```sparql
-#2017年上映的電影
-SELECT DISTINCT ?item ?itemLabel ?itemDescription ?pubdate WHERE {
-# SELECT DISTINCT ?item ?itemLabel ?itemDescription (GROUP_CONCAT(DISTINCT(?genreID); separator=", ") as ?genres) ?pubdate WHERE {
-## SELECT ?item ?itemLabel ?itemDescription (GROUP_CONCAT(DISTINCT(?genreID); separator=", ") as ?genres) ?pubdate WHERE {
-# SELECT DISTINCT ?item ?itemLabel ?itemDescription (GROUP_CONCAT(DISTINCT(?genreID); separator=", ") as ?genres)   ?pubdate WHERE {
-  ?item wdt:P31 wd:Q11424.
-  ?item rdfs:label ?film_title . 
-  ## ?item wdt:P136 ?type.  
-  ?item wdt:P136 ?genreID .
-  ?genreID rdfs:label ?genre .
-  ?item wdt:P577 ?pubdate.
-  ?item wdt:P161 ?actorID .
-  ?actorID rdfs:label ?actor .
-  # FILTER((?pubdate >= "2021-01-01T00:00:00Z"^^xsd:dateTime))
-  # FILTER((?pubdate >= "2022-01-01T00:00:00Z"^^xsd:dateTime))
-    FILTER((?pubdate >= "2022-01-01T00:00:00Z"^^xsd:dateTime) && (?pubdate <= "2023-12-31T00:00:00Z"^^xsd:dateTime))
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-} 
-# GROUP BY ?q ?film_title
-# 已达到查询超时限制
-```
+## COPYRIGHT
 
-```sparql
-SELECT ?q ?film_title (GROUP_CONCAT(DISTINCT(?genreID); separator=", ") as ?genres) WHERE {
-  ?q wdt:P31 wd:Q11424 .
-  ?q rdfs:label ?film_title . 
-  # FILTER (lang(?film_title) = "en")
-  ?q wdt:P136 ?genreID .
-  ?genreID rdfs:label ?genre .
-  ?q wdt:P161 ?actorID .
-  ?actorID rdfs:label ?actor .
-  ?q wdt:P577 ?pubdate.
-  FILTER((?pubdate >= "2022-01-01T00:00:00Z"^^xsd:dateTime))
-  # FILTER (lang(?actor) = "en")
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-} 
-GROUP BY ?q ?film_title
-LIMIT 100
-
-# 已达到查询超时限制
-```
-
-```spaqrl
-SELECT ?q ?film_title (GROUP_CONCAT(DISTINCT(?genreID); separator=", ") as ?genres) WHERE {
-  ?q wdt:P31 wd:Q11424 .
-  ?q rdfs:label ?film_title . 
-  # FILTER (lang(?film_title) = "en")
-  ?q wdt:P136 ?genreID .
-  ?genreID rdfs:label ?genre .
-  ?q wdt:P161 ?actorID .
-  ?actorID rdfs:label ?actor .
-  ?q wdt:P577 ?pubdate.
-  FILTER((?pubdate >= "2022-01-01T00:00:00Z"^^xsd:dateTime))
-  # FILTER (lang(?actor) = "en")
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-} 
-GROUP BY ?q ?film_title
-LIMIT 100
-
-# 已达到查询超时限制
-```
+除非函數有額外標明原作者，將以 MIT license 釋出原始碼
