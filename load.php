@@ -9,3 +9,4 @@ require_once __DIR__ . '/scripts/JsonClass.php';
 require_once __DIR__ . '/scripts/OpenAiClass.php';
 require_once __DIR__ . '/scripts/WikipediaClass.php';
 require_once __DIR__ . '/scripts/WikiDataClass.php';
+require_once __DIR__ . '/scripts/EmbeddingClass.php';
