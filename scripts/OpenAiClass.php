@@ -27,7 +27,6 @@ class OpenAiClass
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            //'Authorization: Bearer sk-你的OPENAI_API_KEY',
             "Authorization: Bearer {$api_key}",
             'Content-Type: application/json; charset=utf-8',
         ]);

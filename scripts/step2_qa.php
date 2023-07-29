@@ -8,7 +8,10 @@ $debug = false;
 //$question = "原本被認為是銀河系的守護英雄，實際上是反派的壞人。";
 //$question = "原本認為是銀河系的守護英雄，實際上是反派。原以為是壞人的變種人，其實是好人";
 //$question = "一群高中生在面對生活挑戰時，如何用無窮熱情和堅定信念，追尋夢想和自我突破的故事";
-$question = "年輕人挑戰自我、突破界限、追尋夢想的感人電影";
+//$question = "年輕人挑戰自我、突破界限、追尋夢想的感人電影";
+//$question = "週五晚上可以跟朋友聚餐看的熱鬧電影";
+//$question = "充滿奇幻元素的冒險電影";
+$question = "2021年的科幻電影";
 //$question = "動人心弦的政治劇情片，鮮明地描繪了一群平凡人為了推翻壓迫性的專制政權而展開的英勇鬥爭。這部電影充滿了激情、犧牲和勇氣，以及對自由和正義的堅定追求";
 //$question = "描述一位年輕的貴族繼承者，他不僅承擔起維護銀河系中最珍貴資源的使命，這資源也是維繫整個宇宙的重要元素。";
 //$question = "故事主角為一位名叫阿爾弗雷德的年輕男子，他出身於一個貴族家庭，繼承了家族的領地和權力。這個領地包含了一個名為「星石」的珍貴資源，這是整個銀河系中最寶貴的資產，也是保持銀河穩定的關鍵元素。阿爾弗雷德在父親過世後，必須肩負起保護「星石」以及他的家族領地的重責大任。透過此片，我們可以看到他如何將自己的命運與整個銀河系的安危緊密繫結，並踏上了保護這個至關重要資源的道路。";
@@ -57,6 +60,9 @@ function getAnswer($embedding_of_question) {
 
     $results = [];
     foreach ($file_name_list AS $index => $file_name) {
+        // remove file extension
+        $qid = pathinfo($file_name, PATHINFO_FILENAME);
+
         $file_path = $folder_path_of_embedding . $file_name;
         if ($debug) {
             echo '$file_path is: ' . print_r($file_path, true) . PHP_EOL;
@@ -73,6 +79,7 @@ function getAnswer($embedding_of_question) {
             $results[] = [
                 'similarity' => $similarity,
                 'index' => $index,
+                'qid' => $qid,
                 'input' => $content_of_existing_movie,
             ];
         }
