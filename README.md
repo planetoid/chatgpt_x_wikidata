@@ -34,14 +34,14 @@ SELECT DISTINCT ?item ?itemLabel ?pubdate WHERE {
 
 2. 設定 `config.php` 中的 `OPENAI_API_TOKEN`。如何取得 OpenAI API Token (Key)，請看 [Where do I find my Secret API Key? \| OpenAI Help Center](https://help.openai.com/en/articles/4936850-where-do-i-find-my-secret-api-key) 網頁說明。
 
-3. `step1_call_apis.php` 設定要啟用的步驟
+3. `scripts/step1_call_apis.php` 設定要啟用的步驟
 
 * $step_crawl_wikidata 依據  `qids.txt` 抓取 WikiData 條目資料
 * $step_crawl_wikipedia 依據 WikiData 條目抓取 Wikipedia 條目資料對應的電影描述
 * $step_crawl_openai 依據 Wikipedia 條目的電影描述 (篩選有中文描述的條目)，呼叫 OpenAi Embedding API
 * $step_generate_embedding_files 將 OpenAi Embedding API 轉成比較容易閱讀的檔案格式
 
-4. `step2_qa.php` 輸入要詢問的問題，將會在產生結果網頁檔案 (位於 `files/search_result/`)
+4. `scripts/step2_qa.php` 輸入要詢問的問題，將會在產生結果網頁檔案 (位於 `files/search_result/`)
 
 ## COPYRIGHT
 
