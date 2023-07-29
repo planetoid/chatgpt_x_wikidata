@@ -17,10 +17,7 @@ $step_crawl_wikipedia = false;
 $step_crawl_openai = false;
 $step_generate_embedding_files = false;
 //$step_generate_embedding_files = true;
-$step_import_to_typesense = true;
 
-$typesense_api_key = getenv("TYPESENSE_API_KEY");
-$typesense_collection_name = "test-collection";
 //----
 require_once __DIR__ . '/../load.php';
 require_once __DIR__ . '/../config.php';
@@ -190,19 +187,6 @@ if($step_crawl_openai | $step_generate_embedding_files){
     }
     echo '$total_crawl_files_of_openai: ' . $total_crawl_files_of_openai . PHP_EOL;
     echo '$total_generated_files_of_embedding: ' . $total_generated_files_of_embedding . PHP_EOL;
-}
-
-if($step_import_to_typesense){
-    $total_affected_count = 0;
-
-    foreach ($qids AS $qid){
-        $file_name = "{$qid}.json";
-        $file_path_of_embedding_result = $folder_path_of_embedding_result . $file_name;
-        if(file_exists($file_path_of_embedding_result)){
-            $total_affected_count += importToTypesense($file_path_of_embedding_result);
-        }
-    }
-    echo '$total_affected_count: ' . $total_affected_count . PHP_EOL;
 }
 
 

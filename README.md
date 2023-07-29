@@ -2,18 +2,9 @@
 
 ## Installation PHP packages
 
-1. [typesense/typesense\-php: PHP client for Typesense: https://github\.com/typesense/typesense](https://github.com/typesense/typesense-php)
-
 ```bash
-$ composer require php-http/curl-client typesense/typesense-php
+$ composer update
 ```
-
-2. [RahulDey12/gpt\-3\-encoder: 🤖 GPT\-3\-Encoder is a PHP implementation of OpenAI's original python encoder/decoder\.](https://github.com/RahulDey12/gpt-3-encoder)
-
-## Installation of vector database (typesense)
-
-...
-
 
 ## 2020~2023年上映的電影
 https://w.wiki/74YJ
@@ -126,96 +117,4 @@ GROUP BY ?q ?film_title
 LIMIT 100
 
 # 已达到查询超时限制
-```
-
-## Typesense
-
-### Adde collection
-
-```
-{
-  "name": "test-collection",
-  "fields": [
-    {
-      "name": "qid",
-      "type": "string",
-      "facet": false,
-      "optional": false,
-      "index": true,
-      "sort": false,
-      "infix": false,
-      "locale": ""
-    },
-    {
-      "name": "text",
-      "type": "string",
-      "facet": false,
-      "optional": false,
-      "index": true,
-      "sort": false,
-      "infix": false,
-      "locale": ""
-    },
-    {
-      "name": "vec",
-      "type": "float[]",
-      "facet": false,
-      "optional": false,
-      "index": true,
-      "sort": false,
-      "infix": false,
-      "locale": ""
-    }
-  ],
-  "default_sorting_field": "",
-  "enable_nested_fields": false,
-  "symbols_to_index": [],
-  "token_separators": []
-}
-```
-
-
-### Add document
-
-1. browse to https://bfritscher.github.io/typesense-dashboard/
-
-2. Add Documents to test-collection
-
-action mode: upsert
-```jsonl
-[
-  {
-    "qid": "",
-    "text": "",
-    "vect": []
-  }
-]
-```
-
-another way to upsert a document
-```bash
-curl -H "X-TYPESENSE-API-KEY: xyz" -X POST --data-binary @embedding/Q163872.json \
-'http://localhost:8108/collections/test-collection/documents/import?return_id=true'
-```
-
-## References
-
-* [Collections \| Typesense](https://typesense.org/docs/0.23.0/api/collections.html#create-a-collection) 定義資料型態
-
-## Troubleshooting
-
-### create new collection: Field `vec` must be a string or Field `vec` must be an array of string.
-
-Example data of Field `vec`: `[0.004900672, -0.0037757154]`
-
-```
-string
-> 0: Field `vec` must be a string.
-
-string[]
-> 0: Field `vec` must be an array of string.
-
-float[]
-> ok
-
 ```
