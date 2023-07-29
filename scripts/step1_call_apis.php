@@ -24,6 +24,8 @@ require_once __DIR__ . '/../config.php';
 
 $openai_go = new OpenAiClass();
 $json_go = new JsonClass();
+$wikipedia_go = new WikipediaClass();
+$wikidata_go = new WikiDataClass();
 
 $total_crawl_files = 0;
 $file_content = file_get_contents($file_path_of_qids);
@@ -46,34 +48,7 @@ if($step_crawl_wikipedia){
         }
 
         if(trim($qid) !== ""){
-            $file_name_of_wikidata = "{$qid}.json";
-            $file_path_of_wikidata = $folder_path_of_wikidata . $file_name_of_wikidata;
-
-            $json_content = file_get_contents($file_path_of_wikidata);
-            $json_data = json_decode($json_content, true);
-            if ($debug) {
-                //echo '$json_data is: ' . print_r($json_data, true) . PHP_EOL;
-            }
-
-            $en_title = null;
-            if(array_key_exists("entities", $json_data)
-                && array_key_exists($qid, $json_data["entities"])
-                && array_key_exists("sitelinks", $json_data["entities"][$qid])
-                && array_key_exists("enwiki", $json_data["entities"][$qid]["sitelinks"])
-                && array_key_exists("title", $json_data["entities"][$qid]["sitelinks"]["enwiki"])
-            ){
-                $en_title = $json_data["entities"][$qid]["sitelinks"]["enwiki"]["title"];
-            }
-
-            $zh_title = null;
-            if(array_key_exists("entities", $json_data)
-                && array_key_exists($qid, $json_data["entities"])
-                && array_key_exists("sitelinks", $json_data["entities"][$qid])
-                && array_key_exists("zhwiki", $json_data["entities"][$qid]["sitelinks"])
-                && array_key_exists("title", $json_data["entities"][$qid]["sitelinks"]["zhwiki"])
-            ){
-                $zh_title = $json_data["entities"][$qid]["sitelinks"]["zhwiki"]["title"];
-            }
+            list($en_title, $zh_title) = $wikidata_go->getWikipediaTitleData($qid);
 
             if ($debug) {
                 echo '$en_title is: ' . print_r($en_title, true) . PHP_EOL;
@@ -81,12 +56,11 @@ if($step_crawl_wikipedia){
             }
 
             if(!is_null($zh_title)) {
-                $total_crawl_files += getZhWikiData($qid, $zh_title);
+                $total_crawl_files += $wikipedia_go->getZhWikiData($qid, $zh_title);
             }elseif(!is_null($en_title)) {
-                $total_crawl_files += getEnWikiData($qid, $en_title);
+                $total_crawl_files += $wikipedia_go->getEnWikiData($qid, $en_title);
             }
         }
-
     }
 
     echo '$total_crawl_files: ' . $total_crawl_files . PHP_EOL;
@@ -109,18 +83,8 @@ if($step_crawl_openai | $step_generate_embedding_files){
 
         if(file_exists($file_path_of_zhwiki)){
             $json_content = file_get_contents($file_path_of_zhwiki);
-            $json_data = json_decode($json_content, true);
-
-            $text = null;
-            if(is_array($json_data)
-                && array_key_exists("query", $json_data)
-                && array_key_exists("pages", $json_data["query"])
-                && array_key_exists(0, $json_data["query"]["pages"])
-                && array_key_exists("extract", $json_data["query"]["pages"][0])
-            ) {
-                $text = $json_data["query"]["pages"][0]["extract"];
-                $text = mb_substr($text, 0, 5500, "UTF-8");
-            }
+            $text = $wikipedia_go->getExtractFromJsonContent($json_content);
+            $text = mb_substr($text, 0, 5500, "UTF-8");
 
             if ($debug) {
                 //echo '$text is: ' . print_r($text, true) . PHP_EOL;
@@ -190,109 +154,4 @@ if($step_crawl_openai | $step_generate_embedding_files){
 }
 
 
-function getEnWikiData($qid = "", $title = ""){
-    global $folder_path_of_enwiki;
-    $file_name = "{$qid}.json";
-    $file_path = $folder_path_of_enwiki . $file_name;
 
-    $title = urlencode($title);
-    //$url = "https://en.wikipedia.org/w/api.php?action=query&prop=extracts&titles={$title}&explaintext=1&formatversion=2";
-    $url = "https://en.wikipedia.org/w/api.php?action=query&prop=extracts&titles={$title}&explaintext=1&formatversion=2&format=json&origin=*";
-
-    return crawl($url, $file_path);
-}
-
-function getZhWikiData($qid = "", $title = ""){
-    global $debug;
-    global $folder_path_of_zhwiki;
-    $file_name = "{$qid}.json";
-    $file_path = $folder_path_of_zhwiki . $file_name;
-
-    $title = urlencode($title);
-    //$url = "https://zh.wikipedia.org/w/api.php?action=query&prop=extracts&titles={$zh_title}&explaintext=1&formatversion=2&format=json";
-    $url = "https://zh.wikipedia.org/w/api.php?action=query&prop=extracts&titles={$title}&explaintext=1&formatversion=2&format=json&origin=*";
-
-    if ($debug) {
-        echo '$url is: ' . print_r($url, true) . PHP_EOL;
-    }
-
-    return crawl($url, $file_path);
-}
-
-function crawl($url = "", $file_path = ""){
-    global $debug;
-
-
-    $json_go = new JsonClass();
-
-    $is_crawl = $json_go->isFileMetError($file_path);
-    if(!$is_crawl){
-        return 0;
-    }
-
-    // create a new cURL resource
-    $ch = curl_init();
-
-    // set URL and other appropriate options
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json',
-            'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:32.0) Gecko/20100101 Firefox/32.0',
-    ));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_HEADER, 0);
-
-    // grab URL and pass it to the browser
-    $out = curl_exec($ch);
-
-    // close cURL resource, and free up system resources
-    curl_close($ch);
-
-    $fp = fopen($file_path, 'w');
-    fwrite($fp, $out);
-    fclose($fp);
-
-    if(file_exists($file_path)){
-        return 1;
-    }
-    return 0;
-}
-
-
-
-
-/**
- * @param $file_path
- * @return int
- */
-function importToTypesense($file_path = ""){
-    global $debug;
-    global $typesense_api_key;
-    global $typesense_collection_name;
-
-    if(!file_exists($file_path)){
-        return 0;
-    }
-
-    $command = "curl -H \"X-TYPESENSE-API-KEY: {$typesense_api_key}\" -X POST --data-binary @{$file_path} \"http://localhost:8108/collections/{$typesense_collection_name}/documents/import?return_id=true\"";
-    //$command = "curl -H \"X-TYPESENSE-API-KEY: {$typesense_api_key}\" -X POST --data-binary @{$file_path} \"http://localhost:8108/collections/{$typesense_collection_name}/documents/upsert?return_id=true\"";
-    // > met { "message": "Not Found"}
-
-    //$command = escapeshellcmd($command);
-
-    exec($command, $output);
-
-    if ($debug) {
-        echo '$output is: ' . gettype($output) . ' ' . print_r($output, true) . PHP_EOL;
-    }
-
-    if(is_array(json_decode($output, true))){
-        $json_data = json_decode($output, true);
-        if(array_key_exists("success", $json_data)
-            && $json_data["success"] === true
-        ){
-            return 1;
-        }
-    }
-    return 0;
-}

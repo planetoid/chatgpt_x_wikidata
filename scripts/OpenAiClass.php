@@ -4,6 +4,7 @@ class OpenAiClass
 {
     public $debug = false;
 
+    // Modified the source code from mxp.tw
     // [OpenAI] 使用 PHP 搭配 Embeddings 開發個人化 AI 問答機器人 – YourGPT – 一介資男 https://www.mxp.tw/9785/
 
     /**
