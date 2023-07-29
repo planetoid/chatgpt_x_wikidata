@@ -1,4 +1,4 @@
-# coscup2023
+# ChatGPT x Wikidata - coscup2023
 
 ## Installation PHP packages
 
