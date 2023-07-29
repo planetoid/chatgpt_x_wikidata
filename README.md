@@ -1,6 +1,8 @@
-# ChatGPT x Wikidata - COSCUP2023
+# ChatGPT x Wikidata
 
 ## Purpose
+
+這是 ChatGPT x Wikidata - COSCUP 2023 分享的概念專案
 
 * 抓取 WIkiData 與 WIkipedia 上的電影資料
 * 透過 OpenAI API 處理電影資料的 Embedding 向量
