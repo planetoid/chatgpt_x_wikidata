@@ -1,4 +1,10 @@
-# ChatGPT x Wikidata - coscup2023
+# ChatGPT x Wikidata - COSCUP2023
+
+## Purpose
+
+* 抓取 WIkiData 與 WIkipedia 上的電影資料
+* 透過 OpenAI API 處理電影資料的 Embedding 向量
+* 詢問 OpenAI 問題，得到推薦的電影
 
 ## Installation PHP packages
 
