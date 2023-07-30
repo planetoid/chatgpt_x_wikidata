@@ -46,7 +46,7 @@ SELECT DISTINCT ?item ?itemLabel ?pubdate WHERE {
 ## Example file
 
 * 問：「在不遠的未來，李凱，一位才華洋溢的程式設計師，偶然發現一段神秘的程式碼，進入了一個由程式碼構成的平行宇宙。他發現自己有能力改變這些程式碼來影響現實世界。當一個想利用他的能力來掌控世界的黑客組織「黑色螢幕」發現他時，李凱必須學會控制這股力量，並阻止黑客的陰謀。在這場數位戰爭中，他和他的朋友們一起，經歷了友情、愛情和犧牲的考驗。」
-* 答：  [回答結果][./example/search_result/9d467662d52c27fefee211a2817600ab.html]
+* 答：  [回答結果](./example/search_result/9d467662d52c27fefee211a2817600ab.html)
 
   
 
